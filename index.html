@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <title>キャラクター系譜シミュレーション</title>
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <h1>キャラクター系譜シミュレーション（API連携版）</h1>
+
+    <div class="container">
+      <div class="panel left-panel">
+        <h2>左キャラ（父）</h2>
+        <div class="grandparents" id="left-grandparents">
+          <div class="grandparent" id="left-grandfather"></div>
+          <div class="grandparent" id="left-grandmother"></div>
+        </div>
+        <div class="selected-char" id="left-char"></div>
+      </div>
+
+      <div class="panel right-panel">
+        <h2>右キャラ（母）</h2>
+        <div class="grandparents" id="right-grandparents">
+          <div class="grandparent" id="right-grandfather"></div>
+          <div class="grandparent" id="right-grandmother"></div>
+        </div>
+        <div class="selected-char" id="right-char"></div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button id="reset">リセット</button>
+      <button id="autoselect">おまかせ</button>
+      <button id="send">送信</button>
+    </div>
+
+    <div class="char-list" id="char-list"></div>
+
+    <!-- モジュールを使わずに普通のスクリプトで読み込む -->
+    <script src="js/api.js"></script>
+    <script src="js/main.js"></script>
+  </body>
+</html>

@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?><sqlb_project><db path="umamusume_relation.db" readonly="0" foreign_keys="1" case_sensitive_like="0" temp_store="0" wal_autocheckpoint="1000" synchronous="2"/><attached/><window><main_tabs open="structure browser pragmas query" current="1"/></window><tab_structure><column_width id="0" width="300"/><column_width id="1" width="0"/><column_width id="2" width="100"/><column_width id="3" width="1084"/><column_width id="4" width="0"/><expanded_item id="0" parent="1"/><expanded_item id="1" parent="0"/><expanded_item id="2" parent="0"/><expanded_item id="1" parent="1"/><expanded_item id="0" parent="1"/><expanded_item id="1" parent="1"/><expanded_item id="2" parent="1"/><expanded_item id="2" parent="1"/><expanded_item id="3" parent="1"/></tab_structure><tab_browse><table title="text_data" custom_title="0" dock_id="4" table="4,9:maintext_data"/><table title="text_data" custom_title="0" dock_id="3" table="4,9:maintext_data"/><table title="text_data" custom_title="0" dock_id="1" table="4,9:maintext_data"/><table title="text_data" custom_title="0" dock_id="5" table="4,9:maintext_data"/><dock_state state="000000ff00000000fd0000000100000002000005d400000345fc0100000001fc00000000000005d40000012c00fffffffa000000040100000005fb000000160064006f0063006b00420072006f00770073006500310100000000ffffffff0000012700fffffffb000000160064006f0063006b00420072006f00770073006500320000000000ffffffff0000000000000000fb000000160064006f0063006b00420072006f00770073006500330100000000ffffffff0000012700fffffffb000000160064006f0063006b00420072006f00770073006500340100000000ffffffff0000012700fffffffb000000160064006f0063006b00420072006f00770073006500350100000000ffffffff0000012c00ffffff000002a00000000000000004000000040000000800000008fc00000000"/><default_encoding codec=""/><browse_table_settings><table schema="main" name="text_data" show_row_id="0" encoding="" plot_x_axis="" unlock_view_pk="_rowid_" freeze_columns="0"><sort><column index="1" mode="0"/></sort><column_widths><column index="1" value="37"/><column index="2" value="70"/><column index="3" value="46"/><column index="4" value="300"/></column_widths><filter_values><column index="1" value="6"/></filter_values><conditional_formats/><row_id_formats/><display_formats/><hidden_columns/><plot_y_axes/><global_filter/></table></browse_table_settings></tab_browse><tab_sql><sql name="SQL 1*">WITH chars AS (
+    SELECT 1001 AS id, 0 AS idx UNION ALL
+    SELECT 1002, 1 UNION ALL
+    SELECT 1003, 2 UNION ALL
+    SELECT 1004, 3 UNION ALL
+    SELECT 1005, 4 UNION ALL
+    SELECT 1006, 5 UNION ALL
+    SELECT 1007, 6
+),
+
+-- 組み合わせごとの共通 relation_type と relation_point 合計
+combination_points AS (
+    SELECT '0,1' AS combo,
+           COALESCE(SUM(sr.relation_point),0) AS total
+    FROM succession_relation AS sr
+    WHERE sr.relation_type IN (
+        SELECT srm1.relation_type
+        FROM succession_relation_member srm1
+        JOIN succession_relation_member srm2
+        ON srm1.relation_type = srm2.relation_type
+        WHERE srm1.chara_id = (SELECT id FROM chars WHERE idx=0)
+          AND srm2.chara_id = (SELECT id FROM chars WHERE idx=1)
+    )
+
+    UNION ALL
+    SELECT '0,4', COALESCE(SUM(sr.relation_point),0)
+    FROM succession_relation AS sr
+    WHERE sr.relation_type IN (
+        SELECT srm1.relation_type
+        FROM succession_relation_member srm1
+        JOIN succession_relation_member srm2
+        ON srm1.relation_type = srm2.relation_type
+        WHERE srm1.chara_id = (SELECT id FROM chars WHERE idx=0)
+          AND srm2.chara_id = (SELECT id FROM chars WHERE idx=4)
+    )
+
+    UNION ALL
+    SELECT '1,4', COALESCE(SUM(sr.relation_point),0)
+    FROM succession_relation AS sr
+    WHERE sr.relation_type IN (
+        SELECT srm1.relation_type
+        FROM succession_relation_member srm1
+        JOIN succession_relation_member srm2
+        ON srm1.relation_type = srm2.relation_type
+        WHERE srm1.chara_id = (SELECT id FROM chars WHERE idx=1)
+          AND srm2.chara_id = (SELECT id FROM chars WHERE idx=4)
+    )
+
+    UNION ALL
+    SELECT '0,1,2', COALESCE(SUM(sr.relation_point),0)
+    FROM succession_relation AS sr
+    WHERE sr.relation_type IN (
+        SELECT relation_type
+        FROM succession_relation_member
+        WHERE chara_id IN (SELECT id FROM chars WHERE idx IN (0,1,2))
+        GROUP BY relation_type
+        HAVING COUNT(DISTINCT chara_id) = 3
+    )
+
+    UNION ALL
+    SELECT '0,1,3', COALESCE(SUM(sr.relation_point),0)
+    FROM succession_relation AS sr
+    WHERE sr.relation_type IN (
+        SELECT relation_type
+        FROM succession_relation_member
+        WHERE chara_id IN (SELECT id FROM chars WHERE idx IN (0,1,3))
+        GROUP BY relation_type
+        HAVING COUNT(DISTINCT chara_id) = 3
+    )
+
+    UNION ALL
+    SELECT '0,4,5', COALESCE(SUM(sr.relation_point),0)
+    FROM succession_relation AS sr
+    WHERE sr.relation_type IN (
+        SELECT relation_type
+        FROM succession_relation_member
+        WHERE chara_id IN (SELECT id FROM chars WHERE idx IN (0,4,5))
+        GROUP BY relation_type
+        HAVING COUNT(DISTINCT chara_id) = 3
+    )
+
+    UNION ALL
+    SELECT '0,4,6', COALESCE(SUM(sr.relation_point),0)
+    FROM succession_relation AS sr
+    WHERE sr.relation_type IN (
+        SELECT relation_type
+        FROM succession_relation_member
+        WHERE chara_id IN (SELECT id FROM chars WHERE idx IN (0,4,6))
+        GROUP BY relation_type
+        HAVING COUNT(DISTINCT chara_id) = 3
+    )
+)
+
+-- 小計の合計を全体合計として追加
+SELECT * FROM combination_points
+UNION ALL
+SELECT 'all_total', SUM(total) FROM combination_points;
+</sql><current_tab id="0"/></tab_sql></sqlb_project>
