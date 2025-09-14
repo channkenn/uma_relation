@@ -119,15 +119,24 @@ async function sendFixedNames() {
     selection.rightGrandfather?.name,
     selection.rightGrandmother?.name,
   ];
-
+  const resultDiv = document.getElementById("result");
   if (names.every(Boolean)) {
     // null除外ではなく、全選択チェック
     try {
       const result = await window.postFixedNames(names);
-      console.log("fixed_names送信結果:", result);
-      alert(
-        `送信成功！最適キャラ: ${result.best_character}, スコア: ${result.score}`
-      );
+      //console.log("fixed_names送信結果:", result);
+      //alert(
+      //  `送信成功！最適キャラ: ${result.best_character}, スコア: ${result.score}`
+      //);
+      // ここでalertではなくHTMLに表示
+      const imgName = result.best_character.replace(/\s/g, "");
+      resultDiv.innerHTML = `
+        <img src="images/${imgName}.png" alt="${result.best_character}">
+        <div>
+          最適キャラクター: <strong>${result.best_character}</strong><br>
+          スコア: <strong>${result.score}</strong>
+        </div>
+      `;
     } catch (err) {
       console.error("fixed_names送信エラー:", err);
       alert("送信エラーが発生しました");
