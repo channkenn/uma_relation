@@ -1,4 +1,13 @@
-const API_BASE = "https://linguistic-sherilyn-animanimage-50068fef.koyeb.app";
+// -------------------------
+// APIのベースURL設定
+// -------------------------
+// 開発環境（localhost）ならローカルサーバを使用
+// 本番は Koyeb の URL を使用
+const API_BASE =
+  window.location.hostname === "localhost" ||
+  window.location.hostname === "127.0.0.1"
+    ? "http://192.168.10.108:5000"
+    : "https://linguistic-sherilyn-animanimage-50068fef.koyeb.app";
 
 // -------------------------
 // キャラクター取得
@@ -32,16 +41,11 @@ window.postFixedNames = async function (namesArray) {
     throw new Error("namesArray must be an array of 6 names");
   }
 
-  // サーバが期待する payload は { names: [...] } の形式
-  const payload = {
-    names: namesArray,
-  };
+  const payload = { names: namesArray };
 
   const res = await fetch(`${API_BASE}/api/fixed_names`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
 
