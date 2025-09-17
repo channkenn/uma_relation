@@ -29,7 +29,7 @@ async function init() {
 // -------------------
 // キャラクター一覧レンダリング
 // -------------------
-function renderCharList() {
+function renderCharList_20250917() {
   charList.innerHTML = "";
   characters.forEach((ch, index) => {
     const div = document.createElement("div");
@@ -38,6 +38,29 @@ function renderCharList() {
     div.style.backgroundImage = `url(images/${imgName}.png)`;
     div.dataset.index = index;
     div.addEventListener("click", () => selectCharForTarget(index));
+    charList.appendChild(div);
+  });
+}
+// キャラクター一覧レンダリング
+// -------------------
+function renderCharList() {
+  charList.innerHTML = "";
+
+  // 名前でソート（アルファベット順 or 五十音順）
+  const sortedChars = [...characters].sort((a, b) => {
+    return a.name.localeCompare(b.name, "ja"); // 日本語対応
+  });
+
+  sortedChars.forEach((ch, index) => {
+    const div = document.createElement("div");
+    div.classList.add("char-icon");
+    const imgName = ch.name.replace(/\s/g, "");
+    div.style.backgroundImage = `url(images/${imgName}.png)`;
+
+    // 元のcharacters内のindexを保持するなら
+    div.dataset.index = characters.indexOf(ch);
+
+    div.addEventListener("click", () => selectCharForTarget(div.dataset.index));
     charList.appendChild(div);
   });
 }
@@ -110,7 +133,8 @@ function updateSelectedBorder() {
 // -------------------
 // 手動送信
 // -------------------
-async function sendFixedNames() {
+//ベストウマのみ版20250917
+async function sendFixedNames_20250917() {
   const names = [
     selection.left?.name,
     selection.leftGrandfather?.name,
@@ -137,6 +161,55 @@ async function sendFixedNames() {
           スコア: <strong>${result.score}</strong>
         </div>
       `;
+    } catch (err) {
+      console.error("fixed_names送信エラー:", err);
+      alert("送信エラーが発生しました");
+    }
+  } else {
+    alert("まだ全キャラが選択されていません");
+  }
+}
+
+async function sendFixedNames() {
+  const names = [
+    selection.left?.name,
+    selection.leftGrandfather?.name,
+    selection.leftGrandmother?.name,
+    selection.right?.name,
+    selection.rightGrandfather?.name,
+    selection.rightGrandmother?.name,
+  ];
+  const resultDiv = document.getElementById("result");
+
+  if (names.every(Boolean)) {
+    try {
+      const result = await window.postFixedNames(names);
+      const characters = result.characters; // ["Alice", "Bob", "Charlie"]
+      const scores = result.scores; // [80, 75, 60]
+
+      // characters と scores をまとめてオブジェクトにする
+      const combined = characters.map((name, i) => ({
+        name,
+        score: scores[i],
+      }));
+
+      // スコア順（降順）にソート
+      combined.sort((a, b) => b.score - a.score);
+
+      // HTML生成
+      let html = "<div class='all-results'>";
+      for (const item of combined) {
+        const imgName = item.name.replace(/\s/g, "");
+        html += `
+          <div class="character-result">
+            <img src="images/${imgName}.png" alt="${item.name}">
+              キャラクター: <strong>${item.name}</strong>
+              スコア: <strong>${item.score}</strong>
+          </div>
+        `;
+      }
+      html += "</div>";
+      resultDiv.innerHTML = html;
     } catch (err) {
       console.error("fixed_names送信エラー:", err);
       alert("送信エラーが発生しました");
