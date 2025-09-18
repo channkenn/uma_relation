@@ -170,7 +170,7 @@ async function sendFixedNames_20250917() {
   }
 }
 
-async function sendFixedNames() {
+async function sendFixedNames_20250918() {
   const names = [
     selection.left?.name,
     selection.leftGrandfather?.name,
@@ -217,6 +217,60 @@ async function sendFixedNames() {
   } else {
     alert("まだ全キャラが選択されていません");
   }
+}
+async function sendFixedNames() {
+  const names = [
+    selection.left?.name,
+    selection.leftGrandfather?.name,
+    selection.leftGrandmother?.name,
+    selection.right?.name,
+    selection.rightGrandfather?.name,
+    selection.rightGrandmother?.name,
+  ];
+  const resultDiv = document.getElementById("result");
+
+  if (names.every(Boolean)) {
+    try {
+      const result = await window.postFixedNames(names);
+      const { characters, scores } = result;
+
+      // characters と scores をまとめてソート済みオブジェクト化
+      const combined = characters
+        .map((name, i) => ({
+          name,
+          score: scores[i],
+        }))
+        .sort((a, b) => b.score - a.score);
+
+      const spaceRegex = /\s/g;
+
+      // HTML組み立て
+      const parts = ['<div class="all-results">'];
+      for (const item of combined) {
+        parts.push(renderCharacter({ ...item, regex: spaceRegex }));
+      }
+      parts.push("</div>");
+
+      // 一括DOM反映
+      resultDiv.innerHTML = parts.join("");
+    } catch (err) {
+      console.error("fixed_names送信エラー:", err);
+      alert("送信エラーが発生しました");
+    }
+  } else {
+    alert("まだ全キャラが選択されていません");
+  }
+}
+
+function renderCharacter({ name, score, regex }) {
+  const imgName = name.replace(regex, "");
+  return `
+    <div class="character-result">
+      <img src="images/${imgName}.png" alt="${name}" loading="lazy">
+      キャラクター: <strong>${name}</strong>
+      スコア: <strong>${score}</strong>
+    </div>
+  `;
 }
 
 // -------------------
