@@ -300,12 +300,15 @@ document.getElementById("reset").addEventListener("click", () => {
 });
 
 document.getElementById("autoselect").addEventListener("click", () => {
-  const indices = [];
-  while (indices.length < 6) {
-    let idx = Math.floor(Math.random() * characters.length);
-    if (!indices.includes(idx)) indices.push(idx);
+  // 1. 6キャラを重複なしランダム選択
+  const indicesSet = new Set();
+  while (indicesSet.size < 6) {
+    const idx = Math.floor(Math.random() * characters.length);
+    indicesSet.add(idx);
   }
+  const indices = Array.from(indicesSet);
 
+  // 2. UI要素と selection オブジェクトの対応マップ
   const elements = [
     leftChar,
     leftGrandfather,
@@ -315,33 +318,41 @@ document.getElementById("autoselect").addEventListener("click", () => {
     rightGrandmother,
   ];
 
+  const selectionMap = {
+    "left-char": "left",
+    "right-char": "right",
+    "left-grandfather": "leftGrandfather",
+    "left-grandmother": "leftGrandmother",
+    "right-grandfather": "rightGrandfather",
+    "right-grandmother": "rightGrandmother",
+  };
+
+  // 3. 選択キャラを UI と selection に反映
   elements.forEach((el, i) => {
     const ch = characters[indices[i]];
     el.style.backgroundImage = `url(images/${ch.name.replace(/\s/g, "")}.png)`;
-    switch (el.id) {
-      case "left-char":
-        selection.left = ch;
-        break;
-      case "right-char":
-        selection.right = ch;
-        break;
-      case "left-grandfather":
-        selection.leftGrandfather = ch;
-        break;
-      case "left-grandmother":
-        selection.leftGrandmother = ch;
-        break;
-      case "right-grandfather":
-        selection.rightGrandfather = ch;
-        break;
-      case "right-grandmother":
-        selection.rightGrandmother = ch;
-        break;
-    }
+    selection[selectionMap[el.id]] = ch;
   });
 
+  // 4. 選択枠の更新
   updateSelectedBorder();
-  // 自動送信は削除
+  // 自動送信は削除済み
+});
+document.getElementById("umarelation").addEventListener("click", () => {
+  // --- right-char → right-grandmother ---
+  const rightCharImage = rightChar.style.backgroundImage;
+  rightGrandmother.style.backgroundImage = rightCharImage;
+  selection.rightGrandmother = selection.right;
+  rightChar.style.backgroundImage = "";
+  selection.right = null;
+
+  // --- left-char → right-grandfather ---
+  const leftCharImage = leftChar.style.backgroundImage;
+  rightGrandfather.style.backgroundImage = leftCharImage;
+  selection.rightGrandfather = selection.left;
+
+  // 選択枠の更新
+  updateSelectedBorder();
 });
 
 // -------------------
