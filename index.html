@@ -12,8 +12,8 @@
       <div class="panel left-panel">
         <h2>左キャラ（父）</h2>
         <div class="grandparents" id="left-grandparents">
-          <div class="grandparent" id="left-grandfather"></div>
-          <div class="grandparent" id="left-grandmother"></div>
+          <div class="selected-char" id="left-grandfather"></div>
+          <div class="selected-char" id="left-grandmother"></div>
         </div>
         <div class="selected-char" id="left-char"></div>
       </div>
@@ -21,8 +21,8 @@
       <div class="panel right-panel">
         <h2>右キャラ（母）</h2>
         <div class="grandparents" id="right-grandparents">
-          <div class="grandparent" id="right-grandfather"></div>
-          <div class="grandparent" id="right-grandmother"></div>
+          <div class="selected-char" id="right-grandfather"></div>
+          <div class="selected-char" id="right-grandmother"></div>
         </div>
         <div class="selected-char" id="right-char"></div>
       </div>
@@ -31,8 +31,9 @@
     <div class="controls">
       <button id="reset">リセット</button>
       <button id="autoselect">おまかせ</button>
-      <button id="umarelation">継承</button>
-      <button id="send">送信</button>
+      <button id="send">計算</button>
+      <button id="umarelationfather">父継承</button>
+      <button id="umarelationmother">母継承</button>
     </div>
 
     <div class="char-list" id="char-list"></div>

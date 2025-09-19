@@ -60,6 +60,12 @@ h1 {
   background-size: cover;
   margin: 0 auto;
 }
+/* 選択中のキャラクター枠 */
+.selected-char.active {
+  border-color: #28a745; /* 緑色の枠 */
+  box-shadow: 0 0 12px rgba(40, 167, 69, 0.6);
+  transform: scale(1.05);
+}
 
 .left-panel .selected-char {
   border-color: #007bff;

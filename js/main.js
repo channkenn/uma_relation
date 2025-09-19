@@ -44,25 +44,35 @@ function renderCharList_20250917() {
 // キャラクター一覧レンダリング
 // -------------------
 function renderCharList() {
+  // コンテナクリア
   charList.innerHTML = "";
 
-  // 名前でソート（アルファベット順 or 五十音順）
-  const sortedChars = [...characters].sort((a, b) => {
-    return a.name.localeCompare(b.name, "ja"); // 日本語対応
-  });
+  // ソート（名前順）＋元データ index を保持
+  const sortedChars = characters
+    .map((ch, idx) => ({ ...ch, origIndex: idx }))
+    .sort((a, b) => a.name.localeCompare(b.name, "ja"));
 
-  sortedChars.forEach((ch, index) => {
+  const fragment = document.createDocumentFragment();
+
+  sortedChars.forEach((ch) => {
     const div = document.createElement("div");
     div.classList.add("char-icon");
+
+    // 画像設定（遅延読み込み用に data-src にしてもOK）
     const imgName = ch.name.replace(/\s/g, "");
     div.style.backgroundImage = `url(images/${imgName}.png)`;
 
-    // 元のcharacters内のindexを保持するなら
-    div.dataset.index = characters.indexOf(ch);
+    // 元データ index
+    div.dataset.index = ch.origIndex;
 
+    // クリックイベント
     div.addEventListener("click", () => selectCharForTarget(div.dataset.index));
-    charList.appendChild(div);
+
+    fragment.appendChild(div);
   });
+
+  // 一括追加で描画回数を削減
+  charList.appendChild(fragment);
 }
 
 // -------------------
@@ -80,6 +90,26 @@ function renderCharList() {
     activeTarget = el;
   });
 });
+function setActiveChar(el) {
+  document
+    .querySelectorAll(".selected-char.active")
+    .forEach((e) => e.classList.remove("active"));
+  el.classList.add("active");
+  activeTarget = el;
+}
+
+// クリック時
+leftChar.addEventListener("click", () => setActiveChar(leftChar));
+rightChar.addEventListener("click", () => setActiveChar(rightChar));
+leftGrandfather.addEventListener("click", () => setActiveChar(leftGrandfather));
+leftGrandmother.addEventListener("click", () => setActiveChar(leftGrandmother));
+rightGrandfather.addEventListener("click", () =>
+  setActiveChar(rightGrandfather)
+);
+rightGrandmother.addEventListener("click", () =>
+  setActiveChar(rightGrandmother)
+);
+// ... 他の枠も同様
 
 // -------------------
 // キャラクター選択
@@ -338,8 +368,30 @@ document.getElementById("autoselect").addEventListener("click", () => {
   updateSelectedBorder();
   // 自動送信は削除済み
 });
-document.getElementById("umarelation").addEventListener("click", () => {
-  // --- right-char → right-grandmother ---
+document.getElementById("umarelationfather").addEventListener("click", () => {
+  // --- left-char → left-grandmother ---
+  const leftCharImage = leftChar.style.backgroundImage;
+  leftGrandfather.style.backgroundImage = leftCharImage;
+  selection.leftGrandfather = selection.left;
+  leftChar.style.backgroundImage = "";
+  selection.left = null;
+
+  // --- right-char → left-grandfather ---
+  const rightCharImage = rightChar.style.backgroundImage;
+  leftGrandmother.style.backgroundImage = rightCharImage;
+  selection.leftGrandmother = selection.right;
+
+  // 選択枠の更新
+  updateSelectedBorder();
+  // left-char をアクティブにする
+  document
+    .querySelectorAll(".selected-char.active")
+    .forEach((e) => e.classList.remove("active"));
+  leftChar.classList.add("active");
+  activeTarget = leftChar;
+});
+document.getElementById("umarelationmother").addEventListener("click", () => {
+  // --- righ-char → right-grandmother ---
   const rightCharImage = rightChar.style.backgroundImage;
   rightGrandmother.style.backgroundImage = rightCharImage;
   selection.rightGrandmother = selection.right;
@@ -353,8 +405,13 @@ document.getElementById("umarelation").addEventListener("click", () => {
 
   // 選択枠の更新
   updateSelectedBorder();
+  // right-char をアクティブにする
+  document
+    .querySelectorAll(".selected-char.active")
+    .forEach((e) => e.classList.remove("active"));
+  rightChar.classList.add("active");
+  activeTarget = rightChar;
 });
-
 // -------------------
 // 初期化
 // -------------------
