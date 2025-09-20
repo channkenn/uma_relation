@@ -17,7 +17,7 @@ const rightGrandmother = document.getElementById("right-grandmother");
 const charList = document.getElementById("char-list");
 const resultDiv = document.getElementById("result");
 
-let activeTarget = null; // 選択中の丸
+let activeTarget = null;
 
 // -------------------
 // 初期化
@@ -42,14 +42,10 @@ function renderCharList() {
   sortedChars.forEach((ch) => {
     const div = document.createElement("div");
     div.classList.add("char-icon");
-
     const imgName = ch.name.replace(/\s/g, "");
     div.style.backgroundImage = `url(images/${imgName}.png)`;
-
     div.dataset.index = ch.origIndex;
-
     div.addEventListener("click", () => selectCharForTarget(div.dataset.index));
-
     fragment.appendChild(div);
   });
 
@@ -131,11 +127,9 @@ function attachResultClickEvents() {
   document.querySelectorAll(".character-result img").forEach((img) => {
     img.addEventListener("click", () => {
       if (!activeTarget) setActiveChar(leftChar);
-
       const name = img.alt;
       const ch = characters.find((c) => c.name === name);
       if (!ch) return;
-
       activeTarget.style.backgroundImage = `url(images/${name.replace(
         /\s/g,
         ""
@@ -161,54 +155,107 @@ function attachResultClickEvents() {
           selection.rightGrandmother = ch;
           break;
       }
-
       updateSelectedBorder();
     });
   });
 }
 
 // -------------------
-// 手動送信
+// モーダル生成関数
 // -------------------
-async function sendFixedNames_20250919() {
-  const names = [
-    selection.left?.name,
-    selection.leftGrandfather?.name,
-    selection.leftGrandmother?.name,
-    selection.right?.name,
-    selection.rightGrandfather?.name,
-    selection.rightGrandmother?.name,
-  ];
+function showModal(title, content, onSelect) {
+  const modal = document.createElement("div");
+  modal.className = "modal";
+  modal.innerHTML = `
+    <div class="modal-content">
+      <span class="modal-close">&times;</span>
+      <h2>${title}</h2>
+      <div class="modal-body">${content}</div>
+    </div>
+  `;
+  document.body.appendChild(modal);
 
-  if (!names.every(Boolean)) {
-    alert("まだ全キャラが選択されていません");
-    return;
-  }
+  modal
+    .querySelector(".modal-close")
+    .addEventListener("click", () => modal.remove());
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) modal.remove();
+  });
 
-  try {
-    const result = await window.postFixedNames(names);
-    const { characters: resChars, scores } = result;
-
-    const combined = resChars
-      .map((name, i) => ({ name, score: scores[i] }))
-      .sort((a, b) => b.score - a.score);
-
-    const spaceRegex = /\s/g;
-    const parts = ['<div class="all-results">'];
-    for (const item of combined) {
-      parts.push(renderCharacter({ ...item, regex: spaceRegex }));
-    }
-    parts.push("</div>");
-
-    resultDiv.innerHTML = parts.join("");
-
-    // 結果にクリックイベントを追加
-    attachResultClickEvents();
-  } catch (err) {
-    console.error("fixed_names送信エラー:", err);
-    alert("送信エラーが発生しました");
+  if (onSelect) {
+    modal.querySelectorAll(".history-item").forEach((el, idx) => {
+      el.addEventListener("click", () => {
+        onSelect(idx);
+        modal.remove();
+      });
+    });
   }
 }
+
+// -------------------
+// 履歴管理
+// -------------------
+function saveHistory() {
+  const record = {
+    timestamp: Date.now(),
+    names: [
+      selection.left?.name,
+      selection.leftGrandfather?.name,
+      selection.leftGrandmother?.name,
+      selection.right?.name,
+      selection.rightGrandfather?.name,
+      selection.rightGrandmother?.name,
+    ],
+  };
+  let history = JSON.parse(localStorage.getItem("history") || "[]");
+  history.unshift(record);
+  if (history.length > 10) history = history.slice(0, 10);
+  localStorage.setItem("history", JSON.stringify(history));
+}
+
+function showHistoryModal() {
+  const history = JSON.parse(localStorage.getItem("history") || "[]");
+  if (!history.length) {
+    alert("履歴がありません");
+    return;
+  }
+  const content = history
+    .map((item, idx) => {
+      return `<div class="history-item">${idx + 1}: ${item.names.join(
+        " / "
+      )}</div>`;
+    })
+    .join("");
+  showModal("履歴から選択", content, (idx) => {
+    loadHistory(history[idx].names);
+  });
+}
+
+function loadHistory(names) {
+  const map = {
+    0: { el: leftChar, key: "left" },
+    1: { el: leftGrandfather, key: "leftGrandfather" },
+    2: { el: leftGrandmother, key: "leftGrandmother" },
+    3: { el: rightChar, key: "right" },
+    4: { el: rightGrandfather, key: "rightGrandfather" },
+    5: { el: rightGrandmother, key: "rightGrandmother" },
+  };
+  names.forEach((name, i) => {
+    if (!name) return;
+    const ch = characters.find((c) => c.name === name);
+    if (!ch) return;
+    map[i].el.style.backgroundImage = `url(images/${name.replace(
+      /\s/g,
+      ""
+    )}.png)`;
+    selection[map[i].key] = ch;
+  });
+  updateSelectedBorder();
+}
+
+// -------------------
+// 手動送信
+// -------------------
 async function sendFixedNames() {
   const names = [
     selection.left?.name,
@@ -218,7 +265,6 @@ async function sendFixedNames() {
     selection.rightGrandfather?.name,
     selection.rightGrandmother?.name,
   ];
-
   if (!names.every(Boolean)) {
     alert("まだ全キャラが選択されていません");
     return;
@@ -227,20 +273,18 @@ async function sendFixedNames() {
   try {
     const result = await window.postFixedNames(names);
     const { characters: resChars, scores } = result;
-
     const combined = resChars
       .map((name, i) => ({ name, score: scores[i] }))
       .sort((a, b) => b.score - a.score);
-
     const spaceRegex = /\s/g;
-    // all-resultsを外して、直接resultDivに追加
     const parts = combined.map((item) =>
       renderCharacter({ ...item, regex: spaceRegex })
     );
-
     resultDiv.innerHTML = parts.join("");
 
-    // 結果にクリックイベントを追加
+    // 履歴保存
+    saveHistory();
+
     attachResultClickEvents();
   } catch (err) {
     console.error("fixed_names送信エラー:", err);
@@ -248,16 +292,6 @@ async function sendFixedNames() {
   }
 }
 
-function renderCharacter_20250919({ name, score, regex }) {
-  const imgName = name.replace(regex, "");
-  return `
-    <div class="character-result">
-      <img src="images/${imgName}.png" alt="${name}" loading="lazy">
-      <strong>${name}</strong>
-      <strong>${score}</strong>pt
-    </div>
-  `;
-}
 function renderCharacter({ name, score, regex }) {
   const imgName = name.replace(regex, "");
   return `
@@ -267,11 +301,11 @@ function renderCharacter({ name, score, regex }) {
     </div>
   `;
 }
+
 // -------------------
 // ボタンイベント
 // -------------------
 document.getElementById("send").addEventListener("click", sendFixedNames);
-
 document.getElementById("reset").addEventListener("click", () => {
   selection = {
     left: null,
@@ -291,14 +325,14 @@ document.getElementById("reset").addEventListener("click", () => {
   ].forEach((el) => (el.style.backgroundImage = ""));
   activeTarget = null;
   updateSelectedBorder();
+  // ここを追加：結果表示を消す
+  resultDiv.innerHTML = "";
 });
-
 document.getElementById("autoselect").addEventListener("click", () => {
   const indicesSet = new Set();
   while (indicesSet.size < 6)
     indicesSet.add(Math.floor(Math.random() * characters.length));
   const indices = Array.from(indicesSet);
-
   const elements = [
     leftChar,
     leftGrandfather,
@@ -315,48 +349,74 @@ document.getElementById("autoselect").addEventListener("click", () => {
     "right-grandfather": "rightGrandfather",
     "right-grandmother": "rightGrandmother",
   };
-
   elements.forEach((el, i) => {
     const ch = characters[indices[i]];
     el.style.backgroundImage = `url(images/${ch.name.replace(/\s/g, "")}.png)`;
     selection[selectionMap[el.id]] = ch;
   });
-
   updateSelectedBorder();
 });
-
-// -------------------
-// 生まれ関係ボタン
-// -------------------
 document.getElementById("umarelationfather").addEventListener("click", () => {
-  const leftCharImage = leftChar.style.backgroundImage;
-  leftGrandfather.style.backgroundImage = leftCharImage;
+  // 左祖父に左キャラを継承
+  leftGrandfather.style.backgroundImage = leftChar.style.backgroundImage;
   selection.leftGrandfather = selection.left;
-  leftChar.style.backgroundImage = "";
-  selection.left = null;
 
-  const rightCharImage = rightChar.style.backgroundImage;
-  leftGrandmother.style.backgroundImage = rightCharImage;
+  // 左母に右キャラを継承
+  leftGrandmother.style.backgroundImage = rightChar.style.backgroundImage;
   selection.leftGrandmother = selection.right;
 
+  // 左キャラを結果の一番スコアが高いキャラクターに置き換え
+  const resultItems = resultDiv.querySelectorAll(".character-result img");
+  if (resultItems.length > 0) {
+    const topCharName = resultItems[0].alt;
+    const ch = characters.find((c) => c.name === topCharName);
+    if (ch) {
+      leftChar.style.backgroundImage = `url(images/${topCharName.replace(
+        /\s/g,
+        ""
+      )}.png)`;
+      selection.left = ch;
+    }
+  }
+
+  // 枠更新
   updateSelectedBorder();
   setActiveChar(leftChar);
 });
 
 document.getElementById("umarelationmother").addEventListener("click", () => {
-  const rightCharImage = rightChar.style.backgroundImage;
-  rightGrandmother.style.backgroundImage = rightCharImage;
+  // 右祖母に右キャラを継承
+  rightGrandmother.style.backgroundImage = rightChar.style.backgroundImage;
   selection.rightGrandmother = selection.right;
-  rightChar.style.backgroundImage = "";
-  selection.right = null;
 
-  const leftCharImage = leftChar.style.backgroundImage;
-  rightGrandfather.style.backgroundImage = leftCharImage;
+  // 右祖父に左キャラを継承
+  rightGrandfather.style.backgroundImage = leftChar.style.backgroundImage;
   selection.rightGrandfather = selection.left;
 
+  // 右キャラを結果の一番スコアが高いキャラクターに置き換え
+  const resultItems = resultDiv.querySelectorAll(".character-result img");
+  if (resultItems.length > 0) {
+    const topCharName = resultItems[0].alt;
+    const ch = characters.find((c) => c.name === topCharName);
+    if (ch) {
+      rightChar.style.backgroundImage = `url(images/${topCharName.replace(
+        /\s/g,
+        ""
+      )}.png)`;
+      selection.right = ch;
+    }
+  }
+
+  // 枠更新
   updateSelectedBorder();
   setActiveChar(rightChar);
 });
+
+// 履歴モーダルボタン
+const historyButton = document.createElement("button");
+historyButton.textContent = "履歴";
+historyButton.addEventListener("click", showHistoryModal);
+document.querySelector(".controls").appendChild(historyButton);
 
 // -------------------
 // 初期化
