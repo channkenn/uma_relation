@@ -40,10 +40,9 @@ async function retryAsync(func, retries = 5, delayMs = 3000) {
 async function init() {
   try {
     resultDiv.innerHTML = "キャラクター一覧を読み込み中…";
-    // リトライ付きで API 呼び出し
     characters = await retryAsync(() => window.getCharacters());
     renderCharList();
-    resultDiv.innerHTML = ""; // 読み込み完了で表示を消す
+    resultDiv.innerHTML = "";
   } catch (err) {
     console.error("キャラクター取得失敗:", err);
     resultDiv.innerHTML =
@@ -67,7 +66,7 @@ function renderCharList() {
     const div = document.createElement("div");
     div.classList.add("char-icon");
     const imgName = ch.name.replace(/\s/g, "");
-    div.style.backgroundImage = `url(images/${imgName}.png)`;
+    div.style.backgroundImage = `url(images_webp/${imgName}_70.webp)`;
     div.dataset.index = ch.origIndex;
     div.addEventListener("click", () => selectCharForTarget(div.dataset.index));
     fragment.appendChild(div);
@@ -103,7 +102,7 @@ function selectCharForTarget(index) {
   if (!activeTarget) return;
   const ch = characters[index];
   const imgName = ch.name.replace(/\s/g, "");
-  activeTarget.style.backgroundImage = `url(images/${imgName}.png)`;
+  activeTarget.style.backgroundImage = `url(images_webp/${imgName}_100.webp)`;
 
   switch (activeTarget.id) {
     case "left-char":
@@ -154,10 +153,10 @@ function attachResultClickEvents() {
       const name = img.alt;
       const ch = characters.find((c) => c.name === name);
       if (!ch) return;
-      activeTarget.style.backgroundImage = `url(images/${name.replace(
+      activeTarget.style.backgroundImage = `url(images_webp/${name.replace(
         /\s/g,
         ""
-      )}.png)`;
+      )}_100.webp)`;
 
       switch (activeTarget.id) {
         case "left-char":
@@ -268,10 +267,10 @@ function loadHistory(names) {
     if (!name) return;
     const ch = characters.find((c) => c.name === name);
     if (!ch) return;
-    map[i].el.style.backgroundImage = `url(images/${name.replace(
+    map[i].el.style.backgroundImage = `url(images_webp/${name.replace(
       /\s/g,
       ""
-    )}.png)`;
+    )}_100.webp)`;
     selection[map[i].key] = ch;
   });
   updateSelectedBorder();
@@ -320,7 +319,7 @@ function renderCharacter({ name, score, regex }) {
   const imgName = name.replace(regex, "");
   return `
     <div class="character-result">
-      <img src="images/${imgName}.png" alt="${name}" loading="lazy">
+      <img src="images_webp/${imgName}_70.webp" alt="${name}" loading="lazy">
       ${score}pt
     </div>
   `;
@@ -349,7 +348,6 @@ document.getElementById("reset").addEventListener("click", () => {
   ].forEach((el) => (el.style.backgroundImage = ""));
   activeTarget = null;
   updateSelectedBorder();
-  // ここを追加：結果表示を消す
   resultDiv.innerHTML = "";
 });
 document.getElementById("autoselect").addEventListener("click", () => {
@@ -375,63 +373,58 @@ document.getElementById("autoselect").addEventListener("click", () => {
   };
   elements.forEach((el, i) => {
     const ch = characters[indices[i]];
-    el.style.backgroundImage = `url(images/${ch.name.replace(/\s/g, "")}.png)`;
+    el.style.backgroundImage = `url(images_webp/${ch.name.replace(
+      /\s/g,
+      ""
+    )}_100.webp)`;
     selection[selectionMap[el.id]] = ch;
   });
   updateSelectedBorder();
 });
 document.getElementById("umarelationfather").addEventListener("click", () => {
-  // 左祖父に左キャラを継承
   leftGrandfather.style.backgroundImage = leftChar.style.backgroundImage;
   selection.leftGrandfather = selection.left;
 
-  // 左母に右キャラを継承
   leftGrandmother.style.backgroundImage = rightChar.style.backgroundImage;
   selection.leftGrandmother = selection.right;
 
-  // 左キャラを結果の一番スコアが高いキャラクターに置き換え
   const resultItems = resultDiv.querySelectorAll(".character-result img");
   if (resultItems.length > 0) {
     const topCharName = resultItems[0].alt;
     const ch = characters.find((c) => c.name === topCharName);
     if (ch) {
-      leftChar.style.backgroundImage = `url(images/${topCharName.replace(
+      leftChar.style.backgroundImage = `url(images_webp/${topCharName.replace(
         /\s/g,
         ""
-      )}.png)`;
+      )}_100.webp)`;
       selection.left = ch;
     }
   }
 
-  // 枠更新
   updateSelectedBorder();
   setActiveChar(leftChar);
 });
 
 document.getElementById("umarelationmother").addEventListener("click", () => {
-  // 右祖母に右キャラを継承
   rightGrandmother.style.backgroundImage = rightChar.style.backgroundImage;
   selection.rightGrandmother = selection.right;
 
-  // 右祖父に左キャラを継承
   rightGrandfather.style.backgroundImage = leftChar.style.backgroundImage;
   selection.rightGrandfather = selection.left;
 
-  // 右キャラを結果の一番スコアが高いキャラクターに置き換え
   const resultItems = resultDiv.querySelectorAll(".character-result img");
   if (resultItems.length > 0) {
     const topCharName = resultItems[0].alt;
     const ch = characters.find((c) => c.name === topCharName);
     if (ch) {
-      rightChar.style.backgroundImage = `url(images/${topCharName.replace(
+      rightChar.style.backgroundImage = `url(images_webp/${topCharName.replace(
         /\s/g,
         ""
-      )}.png)`;
+      )}_100.webp)`;
       selection.right = ch;
     }
   }
 
-  // 枠更新
   updateSelectedBorder();
   setActiveChar(rightChar);
 });
