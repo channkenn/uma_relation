@@ -20,11 +20,35 @@ const resultDiv = document.getElementById("result");
 let activeTarget = null;
 
 // -------------------
+// 共通リトライ関数
+// -------------------
+async function retryAsync(func, retries = 5, delayMs = 3000) {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      return await func();
+    } catch (err) {
+      console.warn(`試行 ${attempt}/${retries} 失敗:`, err);
+      if (attempt === retries) throw err;
+      await new Promise((r) => setTimeout(r, delayMs));
+    }
+  }
+}
+
+// -------------------
 // 初期化
 // -------------------
 async function init() {
-  characters = await window.getCharacters();
-  renderCharList();
+  try {
+    resultDiv.innerHTML = "キャラクター一覧を読み込み中…";
+    // リトライ付きで API 呼び出し
+    characters = await retryAsync(() => window.getCharacters());
+    renderCharList();
+    resultDiv.innerHTML = ""; // 読み込み完了で表示を消す
+  } catch (err) {
+    console.error("キャラクター取得失敗:", err);
+    resultDiv.innerHTML =
+      "キャラクター一覧の取得に失敗しました。リロードしてください。";
+  }
 }
 
 // -------------------
